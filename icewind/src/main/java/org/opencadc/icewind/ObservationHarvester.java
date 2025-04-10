@@ -69,22 +69,7 @@
 
 package org.opencadc.icewind;
 
-import ca.nrc.cadc.caom2.Artifact;
-import ca.nrc.cadc.caom2.Chunk;
-import ca.nrc.cadc.caom2.Observation;
-import ca.nrc.cadc.caom2.ObservationResponse;
-import ca.nrc.cadc.caom2.ObservationState;
-import ca.nrc.cadc.caom2.ObservationURI;
-import ca.nrc.cadc.caom2.Part;
-import ca.nrc.cadc.caom2.Plane;
 import ca.nrc.cadc.caom2.compute.CaomWCSValidator;
-import ca.nrc.cadc.caom2.harvester.state.HarvestSkipURI;
-import ca.nrc.cadc.caom2.harvester.state.HarvestSkipURIDAO;
-import ca.nrc.cadc.caom2.harvester.state.HarvestState;
-import ca.nrc.cadc.caom2.persistence.ObservationDAO;
-import ca.nrc.cadc.caom2.repo.client.RepoClient;
-import ca.nrc.cadc.caom2.util.CaomValidator;
-import ca.nrc.cadc.caom2.xml.ObservationWriter;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
 import java.net.URI;
@@ -102,6 +87,18 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import org.apache.log4j.Logger;
+import org.opencadc.caom2.Artifact;
+import org.opencadc.caom2.Chunk;
+import org.opencadc.caom2.Observation;
+import org.opencadc.caom2.Part;
+import org.opencadc.caom2.Plane;
+import org.opencadc.caom2.db.ObservationDAO;
+import org.opencadc.caom2.db.harvest.HarvestSkip;
+import org.opencadc.caom2.db.harvest.HarvestSkipDAO;
+import org.opencadc.caom2.db.harvest.HarvestState;
+import org.opencadc.caom2.util.CaomValidator;
+import org.opencadc.caom2.util.ObservationState;
+import org.opencadc.caom2.xml.ObservationWriter;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.BadSqlGrammarException;
 
@@ -118,7 +115,7 @@ public class ObservationHarvester extends Harvester {
     private RepoClient srcRepoClient;
     //private ObservationDAO srcObservationDAO;
     private ObservationDAO destObservationDAO;
-    private HarvestSkipURIDAO harvestSkipDAO;
+    private HarvestSkipDAO harvestSkipDAO;
     private boolean skipped;
     private boolean ready = false;
     private int ingested = 0;
@@ -151,13 +148,12 @@ public class ObservationHarvester extends Harvester {
         // dest is always a database
         Map<String, Object> destConfig = getConfigDAO(dest);
         destConfig.put("basePublisherID", basePublisherID.toASCIIString());
-        this.destObservationDAO = new ObservationDAO();
+        this.destObservationDAO = new ObservationDAO(false);
         destObservationDAO.setConfig(destConfig);
-        destObservationDAO.setOrigin(false); // copy as-is
         
         initHarvestState(destObservationDAO.getDataSource(), Observation.class);
         log.debug("creating HarvestSkip tracker: " + cname + " in " + dest.getSchema());
-        this.harvestSkipDAO = new HarvestSkipURIDAO(destObservationDAO.getDataSource(), null, dest.getSchema());
+        this.harvestSkipDAO = new HarvestSkipDAO(destObservationDAO.getDataSource(), null, dest.getSchema());
         
         if (srcRepoClient.isObsAvailable()) {
             ready = true;
@@ -286,7 +282,7 @@ public class ObservationHarvester extends Harvester {
                 if (ow.entity != null) {
                     o = ow.entity.observation;
                 }
-                HarvestSkipURI hs = ow.skip;
+                HarvestSkip hs = ow.skip;
                 iter1.remove(); // allow garbage collection during loop
 
                 String skipMsg = null;
@@ -427,26 +423,26 @@ public class ObservationHarvester extends Harvester {
                     } else {
                         // TODO
                     }
-                    skipMsg = oops.getMessage(); // message for HarvestSkipURI record
+                    skipMsg = oops.getMessage(); // message for HarvestSkip record
                 } catch (MismatchedChecksumException oops) {
                     log.error("CONTENT PROBLEM - mismatching checksums: " + ow.entity.observationState.getURI());
                     ret.handled++;
-                    skipMsg = oops.getMessage(); // message for HarvestSkipURI record
+                    skipMsg = oops.getMessage(); // message for HarvestSkip record
                 } catch (IllegalArgumentException oops) {
                     log.error("CONTENT PROBLEM - invalid observation: " + ow.entity.observationState.getURI() + " - " + oops.getMessage());
                     if (oops.getCause() != null) {
                         log.error("cause: " + oops.getCause());
                     }
                     ret.handled++;
-                    skipMsg = oops.getMessage(); // message for HarvestSkipURI record
+                    skipMsg = oops.getMessage(); // message for HarvestSkip record
                 } catch (TransientException oops) {
                     log.error("NETWORK PROBLEM - " + oops.getMessage());
                     ret.handled++;
-                    skipMsg = oops.getMessage(); // message for HarvestSkipURI record
+                    skipMsg = oops.getMessage(); // message for HarvestSkip record
                 } catch (NullPointerException ex) {
                     log.error("BUG", ex);
                     ret.abort = true;
-                    skipMsg = "BUG: " + ex.getClass().getName(); // message for HarvestSkipURI record
+                    skipMsg = "BUG: " + ex.getClass().getName(); // message for HarvestSkip record
                 } catch (BadSqlGrammarException ex) {
                     log.error("BUG", ex);
                     BadSqlGrammarException bad = (BadSqlGrammarException) ex;
@@ -457,11 +453,11 @@ public class ObservationHarvester extends Harvester {
                         log.error("NEXT CAUSE", sex2);
                     }
                     ret.abort = true;
-                    skipMsg = ex.getMessage(); // message for HarvestSkipURI record
+                    skipMsg = ex.getMessage(); // message for HarvestSkip record
                 } catch (DataAccessResourceFailureException ex) {
                     log.error("FATAL PROBLEM - probably out of space in database", ex);
                     ret.abort = true;
-                    skipMsg = "FATAL: " + ex.getMessage(); // message for HarvestSkipURI record
+                    skipMsg = "FATAL: " + ex.getMessage(); // message for HarvestSkip record
                 } catch (Exception oops) {
                     // need to inspect the error messages
                     log.debug("exception during harvest", oops);
@@ -481,7 +477,7 @@ public class ObservationHarvester extends Harvester {
                     } else {
                         log.error("unexpected exception", oops);
                     }
-                    // message for HarvestSkipURI record
+                    // message for HarvestSkip record
                     skipMsg = oops.getMessage();
                 } catch (Error err) {
                     log.error("FATAL - probably installation or environment", err);
@@ -497,8 +493,8 @@ public class ObservationHarvester extends Harvester {
                         }
 
                         try {
-                            log.debug("starting HarvestSkipURI transaction");
-                            HarvestSkipURI skip = null;
+                            log.debug("starting HarvestSkip transaction");
+                            HarvestSkip skip = null;
                             if (o != null) {
                                 skip = harvestSkipDAO.get(source, cname, o.getURI().getURI());
                             } else {
@@ -510,16 +506,16 @@ public class ObservationHarvester extends Harvester {
                             }
                             if (skip == null) {
                                 if (o != null) {
-                                    skip = new HarvestSkipURI(source, cname, o.getURI().getURI(), tryAfter, skipMsg);
+                                    skip = new HarvestSkip(source, cname, o.getURI().getURI(), tryAfter, skipMsg);
                                 } else {
-                                    skip = new HarvestSkipURI(source, cname, ow.entity.observationState.getURI().getURI(), tryAfter, skipMsg);
+                                    skip = new HarvestSkip(source, cname, ow.entity.observationState.getURI().getURI(), tryAfter, skipMsg);
                                 }
                             } else {
                                 skip.errorMessage = skipMsg;
                                 skip.setTryAfter(tryAfter);
                             }
 
-                            log.debug("starting HarvestSkipURI transaction");
+                            log.debug("starting HarvestSkip transaction");
                             destObservationDAO.getTransactionManager().startTransaction();
 
                             if (!skipped) {
@@ -540,14 +536,14 @@ public class ObservationHarvester extends Harvester {
                                 }
                             }
 
-                            log.debug("committing HarvestSkipURI transaction");
+                            log.debug("committing HarvestSkip transaction");
                             destObservationDAO.getTransactionManager().commitTransaction();
-                            log.debug("commit HarvestSkipURI: OK");
+                            log.debug("commit HarvestSkip: OK");
                         } catch (Throwable oops) {
-                            log.warn("failed to insert HarvestSkipURI", oops);
+                            log.warn("failed to insert HarvestSkip", oops);
                             try {
                                 destObservationDAO.getTransactionManager().rollbackTransaction();
-                                log.debug("rollback HarvestSkipURI: OK");
+                                log.debug("rollback HarvestSkip: OK");
                             } catch (Exception tex) {
                                 log.error("failed to rollback skip transaction", tex);
                             }
@@ -721,7 +717,7 @@ public class ObservationHarvester extends Harvester {
         SkippedWrapperURI<ObservationResponse> end = entityList.get(entityList.size() - 1);
         if (skipped) {
             if (start.skip.getLastModified().equals(end.skip.getLastModified())) {
-                throw new RuntimeException("detected infinite harvesting loop: " + HarvestSkipURI.class.getSimpleName() + " at "
+                throw new RuntimeException("detected infinite harvesting loop: " + HarvestSkip.class.getSimpleName() + " at "
                         + format(start.skip.getLastModified()));
             }
             return;
@@ -758,21 +754,20 @@ public class ObservationHarvester extends Harvester {
 
     private List<SkippedWrapperURI<ObservationResponse>> getSkipped(Date start) throws ExecutionException, InterruptedException {
         log.info("harvest window (skip): " + format(start) + " [" + batchSize + "]" + " source = " + source + " cname = " + cname);
-        List<HarvestSkipURI> skip = harvestSkipDAO.get(source, cname, start, null, batchSize);
+        List<HarvestSkip> skip = harvestSkipDAO.get(source, cname, start, null, batchSize);
 
         List<SkippedWrapperURI<ObservationResponse>> ret = new ArrayList<SkippedWrapperURI<ObservationResponse>>(skip.size());
 
-        List<ObservationURI> listUris = new ArrayList<>();
-        for (HarvestSkipURI hs : skip) {
-            log.debug("getSkipped: " + hs.getSkipID());
-            listUris.add(new ObservationURI(hs.getSkipID()));
+        List<URI> listUris = new ArrayList<>();
+        for (HarvestSkip hs : skip) {
+            listUris.add(hs.getURI());
         }
         List<ObservationResponse> listResponses = srcRepoClient.get(listUris);
-        log.warn("getSkipped: " + skip.size() + " HarvestSkipURI -> " + listResponses.size() + " ObservationResponse");
+        log.warn("getSkipped: " + skip.size() + " HarvestSkip -> " + listResponses.size() + " ObservationResponse");
 
         for (ObservationResponse o : listResponses) {
-            HarvestSkipURI hs = findSkip(o.observationState.getURI().getURI(), skip);
-            o.observationState.maxLastModified = hs.getTryAfter(); // overwrite bogus value from RepoClient
+            HarvestSkip hs = findSkip(o.observationState.getURI().getURI(), skip);
+            o.observationState.maxLastModified = hs.tryAfter; // overwrite bogus value from RepoClient
             ret.add(new SkippedWrapperURI<>(o, hs));
         }
 
@@ -781,9 +776,9 @@ public class ObservationHarvester extends Harvester {
         return ret;
     }
 
-    private HarvestSkipURI findSkip(URI uri, List<HarvestSkipURI> skip) {
-        for (HarvestSkipURI hs : skip) {
-            if (hs.getSkipID().equals(uri)) {
+    private HarvestSkip findSkip(URI uri, List<HarvestSkip> skip) {
+        for (HarvestSkip hs : skip) {
+            if (hs.getURI().equals(uri)) {
                 return hs;
             }
         }
@@ -793,7 +788,7 @@ public class ObservationHarvester extends Harvester {
     private static class SkipWrapperComparator implements Comparator<SkippedWrapperURI> {
         @Override
         public int compare(SkippedWrapperURI o1, SkippedWrapperURI o2) {
-            return o1.skip.getTryAfter().compareTo(o2.skip.getTryAfter());
+            return o1.skip.tryAfter.compareTo(o2.skip.tryAfter);
         }
     }
 }

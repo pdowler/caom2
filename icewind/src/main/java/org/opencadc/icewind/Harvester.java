@@ -69,10 +69,6 @@
 
 package org.opencadc.icewind;
 
-import ca.nrc.cadc.caom2.harvester.state.HarvestStateDAO;
-import ca.nrc.cadc.caom2.harvester.state.PostgresqlHarvestStateDAO;
-import ca.nrc.cadc.caom2.persistence.PostgreSQLGenerator;
-import ca.nrc.cadc.caom2.persistence.SQLGenerator;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.db.ConnectionConfig;
 import ca.nrc.cadc.db.DBUtil;
@@ -83,6 +79,10 @@ import java.util.Map;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 import org.apache.log4j.Logger;
+import org.opencadc.caom2.db.PostgreSQLDialect;
+import org.opencadc.caom2.db.SQLDialect;
+import org.opencadc.caom2.db.harvest.HarvestStateDAO;
+import org.opencadc.caom2.db.harvest.PostgresqlHarvestStateDAO;
 
 /**
  * 
@@ -122,8 +122,8 @@ public abstract class Harvester implements Runnable {
     protected Map<String, Object> getConfigDAO(HarvestDestination harvestResource) {
         Map<String, Object> ret = new HashMap<>();
         if (harvestResource.getJdbcUrl().contains(POSTGRESQL)) {
-            ret.put(SQLGenerator.class.getName(), PostgreSQLGenerator.class);
-            ret.put("disableHashJoin", Boolean.TRUE);
+            ret.put(SQLDialect.class.getName(), PostgreSQLDialect.class);
+            //ret.put("disableHashJoin", Boolean.TRUE);
         } else {
             throw new IllegalArgumentException("unknown SQL dialect: " + harvestResource);
         }

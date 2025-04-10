@@ -69,18 +69,16 @@
 
 package org.opencadc.icewind;
 
-import ca.nrc.cadc.caom2.DeletedObservation;
-import ca.nrc.cadc.caom2.harvester.state.HarvestState;
-import ca.nrc.cadc.caom2.version.InitDatabase;
 import ca.nrc.cadc.db.ConnectionConfig;
 import ca.nrc.cadc.db.DBUtil;
 import ca.nrc.cadc.net.TransientException;
-import java.io.File;
 import java.net.URI;
-import java.util.Date;
 import java.util.List;
 import javax.sql.DataSource;
 import org.apache.log4j.Logger;
+import org.opencadc.caom2.DeletedObservationEvent;
+import org.opencadc.caom2.db.harvest.HarvestState;
+import org.opencadc.caom2.db.version.InitDatabase;
 
 /**
  * A wrapper that calls the Harvester implementations in the right order.
@@ -195,7 +193,7 @@ public class CaomHarvester implements Runnable {
                             batchSize, numThreads, nochecksum);
                     obsHarvester.setSkipped(false, null);
 
-                    DeletionHarvester obsDeleter = new DeletionHarvester(DeletedObservation.class, src, collection, dest);
+                    DeletionHarvester obsDeleter = new DeletionHarvester(DeletedObservationEvent.class, src, collection, dest);
                     boolean initDel = init;
                     if (!init) {
                         // check if we have ever harvested before to avoid harvesting old deletions

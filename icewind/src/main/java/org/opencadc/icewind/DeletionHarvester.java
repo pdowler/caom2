@@ -69,13 +69,6 @@
 
 package org.opencadc.icewind;
 
-import ca.nrc.cadc.caom2.DeletedEntity;
-import ca.nrc.cadc.caom2.DeletedObservation;
-import ca.nrc.cadc.caom2.ObservationState;
-import ca.nrc.cadc.caom2.harvester.state.HarvestState;
-import ca.nrc.cadc.caom2.persistence.DeletedEntityDAO;
-import ca.nrc.cadc.caom2.persistence.ObservationDAO;
-import ca.nrc.cadc.caom2.repo.client.RepoClient;
 import ca.nrc.cadc.db.TransactionManager;
 import java.io.IOException;
 import java.util.Date;
@@ -83,6 +76,11 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import org.apache.log4j.Logger;
+import org.opencadc.caom2.DeletedObservationEvent;
+import org.opencadc.caom2.db.DeletedObservationEventDAO;
+import org.opencadc.caom2.db.ObservationDAO;
+import org.opencadc.caom2.db.harvest.HarvestState;
+import org.opencadc.caom2.util.ObservationState;
 
 /**
  * Harvest and perform deletions of observations.
@@ -92,9 +90,9 @@ import org.apache.log4j.Logger;
 public class DeletionHarvester extends Harvester implements Runnable {
 
     private static final Logger log = Logger.getLogger(DeletionHarvester.class);
-    private static int DEFAULT_BATCH_SIZE = 100000;
+    private static final int DEFAULT_BATCH_SIZE = 100000;
     
-    private DeletedEntityDAO deletedDAO;
+    private DeletedObservationEventDAO deletedDAO;
     private RepoClient repoClient;
     private ObservationDAO obsDAO;
     private TransactionManager txnManager;
@@ -109,7 +107,6 @@ public class DeletionHarvester extends Harvester implements Runnable {
      * @param src source server.database.schema
      * @param dest destination server.database.schema
      * @param collection the collection to process
-     * @param batchSize ignored, always full list
      */
     public DeletionHarvester(Class<?> entityClass, HarvestSource src,  String collection, 
             HarvestDestination dest) {
@@ -142,7 +139,7 @@ public class DeletionHarvester extends Harvester implements Runnable {
         
         // destination
         Map<String, Object> destConfig = getConfigDAO(dest);
-        this.obsDAO = new ObservationDAO();
+        this.obsDAO = new ObservationDAO(false);
         obsDAO.setConfig(destConfig);
         this.txnManager = obsDAO.getTransactionManager();
         initHarvestState(obsDAO.getDataSource(), entityClass);
@@ -251,16 +248,7 @@ public class DeletionHarvester extends Harvester implements Runnable {
             firstIteration = false;
             log.info("harvest window: " + format(startDate) + " :: " + format(endDate) + " [" + batchSize + "]");
             
-            List<DeletedObservation> entityList = null;
-            String source = null;
-            if (deletedDAO != null) {
-                source = "deletedDAO";
-                entityList = deletedDAO.getList(collection, startDate, endDate, batchSize);
-            } else {
-                source = "repoClient";
-                entityList = repoClient.getDeleted(collection, startDate, endDate, batchSize);
-            }
-
+            List<DeletedObservationEvent> entityList = repoClient.getDeleted(collection, startDate, endDate, batchSize);
             if (entityList == null) {
                 throw new RuntimeException("Error gathering deleted observations from " + source);
             }
@@ -271,35 +259,34 @@ public class DeletionHarvester extends Harvester implements Runnable {
 
             ret.found = entityList.size();
             log.info("found: " + entityList.size());
-            ListIterator<DeletedObservation> iter = entityList.listIterator();
+            ListIterator<DeletedObservationEvent> iter = entityList.listIterator();
             while (iter.hasNext()) {
-                DeletedObservation de = iter.next();
+                DeletedObservationEvent de = iter.next();
                 iter.remove(); // allow garbage collection asap
-                log.debug("Observation read from deletion end-point: " + de.getID() + " date = "
-                        + de.lastModified);
+                log.debug("Observation read from deletion end-point: " + de.getID() + " date = " + de.getLastModified());
 
                 txnManager.startTransaction();
                 boolean ok = false;
                 try {
-                    state.curLastModified = de.lastModified;
+                    state.curLastModified = de.getLastModified();
                     state.curID = de.getID();
 
                     ObservationState cur = obsDAO.getState(de.getID());
                     if (cur != null) {
                         log.debug("Observation: " + de.getID() + " found in DB");
                         Date lastUpdate = cur.getMaxLastModified();
-                        Date deleted = de.lastModified;
+                        Date deleted = de.getLastModified();
                         log.debug("to be deleted: " + de.getClass().getSimpleName() + " " + de.getURI() + " "
-                                + de.getID() + "deleted date " + format(de.lastModified)
+                                + de.getID() + "deleted date " + format(de.getLastModified())
                                 + " modified date " + format(cur.getMaxLastModified()));
                         if (deleted.after(lastUpdate)) {
                             log.info("delete: " + de.getClass().getSimpleName() + " " + de.getURI() + " "
-                                    + de.getID() + " " + format(de.lastModified));
+                                    + de.getID() + " " + format(de.getLastModified()));
                             obsDAO.delete(de.getID());
                             ret.deleted++;
                         } else {
                             log.info("skip out-of-date delete: " + de.getClass().getSimpleName() + " "
-                                    + de.getURI() + " " + de.getID() + " " + format(de.lastModified));
+                                    + de.getURI() + " " + de.getID() + " " + format(de.getLastModified()));
                             ret.skipped++;
                         }
                     } else {
@@ -363,15 +350,15 @@ public class DeletionHarvester extends Harvester implements Runnable {
      * @param entityList
      *            list of entities to detect loops with
      */
-    private void detectLoop(List<DeletedObservation> entityList) {
+    private void detectLoop(List<DeletedObservationEvent> entityList) {
         if (entityList.size() < 2) {
             return;
         }
-        DeletedEntity start = entityList.get(0);
-        DeletedEntity end = entityList.get(entityList.size() - 1);
-        if (start.lastModified.equals(end.lastModified)) {
+        DeletedObservationEvent start = entityList.get(0);
+        DeletedObservationEvent end = entityList.get(entityList.size() - 1);
+        if (start.getLastModified().equals(end.getLastModified())) {
             throw new RuntimeException("detected infinite harvesting loop: " + entityClass.getSimpleName()
-                    + " at " + format(start.lastModified));
+                    + " at " + format(start.getLastModified()));
         }
 
     }
