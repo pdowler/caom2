@@ -3,15 +3,13 @@ info:
   title: Prototype CAOM TAP service
   version: '2.0-BETA'
   description: |
-    This is a prototype WD-CAOM-2.5 TAP service with draft ivoa.ObsCore and
-    ivoa.ObsCore_radio views.
+    This is a prototype WD-CAOM-2.5 TAP service with WD-ObsCore-1.2 views.
     
-    For CAOM-2.5, only the caom2.Observation, caom2.Plane, and caom2.Artifact
-    tables are currently used; the caom2.Part and caom2.Chunk tables are not used,
-    deprecated, and will probably be removed.
+    Tables: caom2.Observation, caom2.Plane, caom2.Artifact, caom2.ArtifactDescription,
+    caom2.DeletedObservationEvent, caom2.DeletedArtifactDescriptionEvent.
     
-    The caom2.ArtifactDescription table will get used once the DataLink service 
-    (bifrost) is updated for CAOM-2.5.
+    IVOA views:  ivoa.ObsCore, ivoa.ObsCore_radio.
+
 servers:
 - url: /argus
 

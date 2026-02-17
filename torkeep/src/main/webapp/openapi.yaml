@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Prototype CAOM Metadata Curation service
+  version: '2.0-BETA'
+  description: |
+    This is a prototype WD-CAOM-2.5 metadata curation service.
+
+tags:
+  - name: CAOM Observation Metadata
+    description: Operations related to Common Archive Observation Model metadata curation
+    externalDocs:
+      description: CAOM Model Documentation
+      url: https://www.ivoa.net/documents/CAOM/
+  - name: VOSI Capabilities
+    description: VOSI Capabilities endpoint
+        
+servers:
+- url: /torkeep
+
+paths:
+    /observations:
+        $ref: ./openapi/caom2/caom2-collections.yaml
+    /observations/{collection}:
+        $ref: ./openapi/caom2/caom2-observations.yaml
+    /observations/{collection}/{observationID}:
+        $ref: ./openapi/caom2/caom2-observation.yaml
+
+    /capabilities:
+        $ref: ./openapi/vosi/vosi-capabilities.yaml
