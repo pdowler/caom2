@@ -42,3 +42,27 @@ components:
                             name: capabilities
                             prefix: vosi
                             namespace: http://www.ivoa.net/xml/VOSICapabilities/v1.0
+                    example: |
+                        <vosi:capabilities xmlns:vosi="http://www.ivoa.net/xml/VOSICapabilities/v1.0"
+                                xmlns:vr="http://www.ivoa.net/xml/VOResource/v1.0"
+                                xmlns:vs="http://www.ivoa.net/xml/VODataService/v1.1"
+                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <capability standardID="ivo://ivoa.net/std/VOSI#capabilities">
+                                <interface xsi:type="vs:ParamHTTP" role="std">
+                                    <accessURL use="full">https://example.net/argus/capabilities</accessURL>
+                                </interface>
+                            </capability>
+                            <capability xmlns:tr="http://www.ivoa.net/xml/TAPRegExt/v1.0"
+                                    standardID="ivo://ivoa.net/std/TAP"
+                                    xsi:type="tr:TableAccess">
+                                <interface xsi:type="vs:ParamHTTP" role="std" version="1.1">
+                                    <accessURL use="base">https://example.net/argus</accessURL>
+                                    <securityMethod />
+                                    <securityMethod standardID="ivo://ivoa.net/sso#cookie" />
+                                    <securityMethod standardID="ivo://ivoa.net/sso#tls-with-certificate" />
+                                    <securityMethod standardID="ivo://ivoa.net/sso#token" />
+                                </interface>
+                                ...
+                            </capability>
+                            ...
+                        </vosi:capabilities>
