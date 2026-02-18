@@ -13,6 +13,12 @@ info:
 servers:
 - url: /argus
 
+tags:
+    - name: VOSI Capabilities
+    - name: VOSI Table Metadata
+    - name: TAP Query
+    - name: UWS Job
+    
 paths:
     /sync:
         $ref: ./openapi/tap/tap-sync.yaml
