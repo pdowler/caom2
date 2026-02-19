@@ -17,7 +17,10 @@ group = 'ca.nrc.cadc'
 war {  
     // include the swagger-ui
     from(System.getenv('RPS') + '/resources/') {
-        include 'swagger-ui/'
+        include 'swagger-openapi/'
+    }
+    from('.') { 
+        include 'VERSION'
     }
 }
 

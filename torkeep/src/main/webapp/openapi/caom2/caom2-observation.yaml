@@ -1,0 +1,167 @@
+get:
+    operationId: read-observation
+    tags: 
+      - CAOM Observation Metadata
+    summary: get observation by identifier
+    description: provides the complete model instance document for a single observation
+    parameters:
+      - in: path
+        name: collection
+        description: a single collection name
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: observationID
+        description: unique observation identifier
+        required: true
+        schema:
+          type: string
+    responses:
+        '200':
+            $ref: '#/components/schemas/observationDoc'
+        '401':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-authenticated
+        '403':
+            $ref: ../vosi/vosi-std-responses.yaml#/permission-denied
+        '404':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-found
+
+post:
+    operationId: update-observation
+    tags: 
+      - CAOM Observation Metadata
+    summary: proto - update observation metadata and/or content (optional)
+    description: update the observation metadata from a model instance document
+    parameters:
+      - in: path
+        name: collection
+        description: a single collection name
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: observationID
+        description: unique observation identifier
+        required: true
+        schema:
+            type: string
+    requestBody:
+        description: a observation description
+        $ref: '#/components/schemas/observationDoc'
+    responses:
+        '204':
+            description: observation updated
+        '400':
+            $ref: ../vosi/vosi-std-responses.yaml#/bad-request
+        '401':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-authenticated
+        '403':
+            $ref: ../vosi/vosi-std-responses.yaml#/permission-denied
+        '404':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-found
+        '413':
+            $ref: ../vosi/vosi-std-responses.yaml#/too-large
+
+put:
+    operationId: create-observation
+    tags: 
+      - CAOM Observation Metadata
+    summary: proto - create observation (optional)
+    description: create observation from a model instance document
+    parameters:
+      - in: path
+        name: collection
+        description: a single collection name
+        required: true
+        schema:
+          type: string
+      - in: path
+        name: observationID
+        description: unique observation identifier
+        required: true
+        schema:
+            type: string
+    requestBody:
+        description: a observation description
+        $ref: '#/components/schemas/observationDoc'
+    responses:
+        '201':
+            description: observation created
+        '400':
+            $ref: ../vosi/vosi-std-responses.yaml#/bad-request
+        '401':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-authenticated
+        '403':
+            $ref: ../vosi/vosi-std-responses.yaml#/permission-denied
+        '404':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-found
+        '413':
+            $ref: ../vosi/vosi-std-responses.yaml#/too-large
+
+delete:
+    operationId: delete-observation
+    tags: 
+      - CAOM Observation Metadata
+    summary: proto - delete observation (optional)
+    description: delete observation by identifier
+    parameters:
+      - in: path
+        name: collection
+        description: a single collection name
+        required: true
+        schema:
+          type: string
+      - name: observationID
+        in: path
+        description: unique observation identifier
+        required: true
+        schema:
+            type: string
+    responses:
+        '204':
+            description: observation deleted
+        '401':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-authenticated
+        '403':
+            $ref: ../vosi/vosi-std-responses.yaml#/permission-denied
+        '404':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-found
+
+components:
+    schemas:
+        observationDoc:
+            description: metadata for the specified observation
+            content:
+                application/x-caom+xml:
+                    schema:
+                        type: object
+                        xml:
+                            name: Observation
+                            prefix: caom2
+                            namespace: http://www.opencadc.org/caom2/xml/v2.5
+                    example: |
+                        <caom2:Observation xmlns:caom2="http://www.opencadc.org/caom2/xml/v2.5"
+                                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                                xsi:type="caom2:DerivedObservation" 
+                                caom2:id="5783462c-db24-4cbc-96fa-5fd5948ff434">
+                            <caom2:collection>TEST</caom2:collection>
+                            <caom2:uri>caom:TEST/observationID</caom2:uri>
+                            ...
+                        </caom2:Observation>
+                application/x-caom2+json:
+                    schema:
+                        type: object
+                        json:
+                            name: Observation
+                            namespace: http://www.opencadc.org/caom2/json/v2.5
+                    example: |
+                        { 
+                            "@caom2" : "http://www.opencadc.org/caom2/json/v2.5",
+                            "@type" : "caom2:DerivedObservation",
+                            "@id" : "5783462c-db24-4cbc-96fa-5fd5948ff434",
+                            "collection" : "TEST",
+                            "uri" : "caom:TEST/observationID",
+                            ...
+                        }
+

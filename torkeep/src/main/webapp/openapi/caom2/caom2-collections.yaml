@@ -1,0 +1,28 @@
+get:
+    operationId: list-collections
+    tags: 
+      - CAOM Observation Metadata
+    summary: CAOM Collection List
+    description: |
+        Provides a list of collections configured in the metadata repository
+
+    responses:
+        '200':
+            $ref: '#/components/schemas/collectionList'
+        '400':
+            $ref: ../vosi/vosi-std-responses.yaml#/bad-request
+        '401':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-authenticated
+        '403':
+            $ref: ../vosi/vosi-std-responses.yaml#/permission-denied
+        '404':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-found
+
+components:
+    schemas:
+        collectionList:
+            description: list of collections
+            content:
+                text/tab-separated-values:
+                    schema:
+                        type: string

@@ -1,0 +1,36 @@
+get:
+    operationId: list-observations
+    tags: 
+      - CAOM Observation Metadata
+    summary: CAOM Observation List
+    description: |
+        Provides a list of observations in a collection, ordered by
+        caom2:Observation.maxLastModified (increasing)
+    parameters:
+      - in: path
+        name: collection
+        description: a single collection name
+        required: true
+        schema:
+          type: string
+
+    responses:
+        '200':
+            $ref: '#/components/schemas/observationList'
+        '400':
+            $ref: ../vosi/vosi-std-responses.yaml#/bad-request
+        '401':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-authenticated
+        '403':
+            $ref: ../vosi/vosi-std-responses.yaml#/permission-denied
+        '404':
+            $ref: ../vosi/vosi-std-responses.yaml#/not-found
+
+components:
+    schemas:
+        observationList:
+            description: list of observations in a collection
+            content:
+                text/tab-separated-values:
+                    schema:
+                        type: string

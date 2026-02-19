@@ -49,20 +49,17 @@ components:
                                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                             <capability standardID="ivo://ivoa.net/std/VOSI#capabilities">
                                 <interface xsi:type="vs:ParamHTTP" role="std">
-                                    <accessURL use="full">https://example.net/argus/capabilities</accessURL>
+                                    <accessURL use="full">https://example.net/torkeep/capabilities</accessURL>
                                 </interface>
                             </capability>
-                            <capability xmlns:tr="http://www.ivoa.net/xml/TAPRegExt/v1.0"
-                                    standardID="ivo://ivoa.net/std/TAP"
-                                    xsi:type="tr:TableAccess">
-                                <interface xsi:type="vs:ParamHTTP" role="std" version="1.1">
-                                    <accessURL use="base">https://example.net/argus</accessURL>
+                            <capability standardID="https://www.opencadc.org/caom2/repo/v2#observation-2.5">
+                                <interface xsi:type="vs:ParamHTTP" role="std">
+                                    <accessURL use="base">https://example.net/torkeep/observations</accessURL>
                                     <securityMethod />
                                     <securityMethod standardID="ivo://ivoa.net/sso#cookie" />
                                     <securityMethod standardID="ivo://ivoa.net/sso#tls-with-certificate" />
                                     <securityMethod standardID="ivo://ivoa.net/sso#token" />
                                 </interface>
-                                ...
                             </capability>
                             ...
                         </vosi:capabilities>
