@@ -2,7 +2,7 @@ get:
     operationId: query-job-list
     tags:
       - TAP Query
-    summary: list async queries
+    summary: list queries (UWS jobs)
     description: TAP asynchronous query endpoint (list UWS Jobs)
     parameters:
     responses:
@@ -16,7 +16,7 @@ post:
     operationId: query-job-create
     tags:
       - TAP Query
-    summary: create async query
+    summary: create async query (UWS job)
     description: TAP asynchronous query endpoint (create UWS Job)
     parameters:
       - $ref: ./tap-lang.yaml

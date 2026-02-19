@@ -11,13 +11,12 @@ info:
     IVOA views:  ivoa.ObsCore, ivoa.ObsCore_radio.
 
 servers:
-- url: /argus
+    - url: /argus
 
 tags:
     - name: VOSI Capabilities
     - name: VOSI Table Metadata
     - name: TAP Query
-    - name: UWS Job
     
 paths:
     /sync:
@@ -28,6 +27,8 @@ paths:
         $ref: ./openapi/uws/uws-job.yaml
     /async/{jobID}/phase:
         $ref: ./openapi/uws/uws-job-phase.yaml
+    /async/{jobID}/results/result:
+        $ref: ./openapi/tap/tap-result.yaml
 
     /capabilities:
         $ref: ./openapi/vosi/vosi-capabilities.yaml

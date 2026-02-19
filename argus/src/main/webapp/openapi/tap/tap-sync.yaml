@@ -13,7 +13,7 @@ get:
       - $ref: ../dali/dali-upload.yaml
     responses:
         '200':
-            description: successful response
+            $ref: './tap-result.yaml#/components/schemas/queryResult'
         '303':
             description: redirect to the job result (optional)
         '400':
@@ -37,7 +37,7 @@ post:
       - $ref: ../dali/dali-upload.yaml
     responses:
         '200':
-            description: successful response
+            $ref: './tap-result.yaml#/components/schemas/queryResult'
         '303':
             description: redirect to the job result (optional)
         '400':

@@ -1,7 +1,7 @@
 get:
     operationId: job-phase-get
     tags:
-        - UWS Job
+        - TAP Query
     summary: get a UWS job phase
     description: job phase resource
     parameters:
@@ -22,7 +22,7 @@ get:
 post:
     operationId: job-phase-update
     tags:
-        - UWS Job
+        - TAP Query
     summary: change a UWS job phase
     description: update job
     parameters:
