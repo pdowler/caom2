@@ -479,11 +479,3 @@ insert into tap_schema.columns11 (table_name,column_name,description,ucd,utype,u
 ( 'caom2.SIAv1', 'dataRelease',  'UTC timestamp when data is publicly available',                NULL, NULL, NULL, 'char', '23*', 'timestamp', 0,1,0 )
 ;
 
-
--- backwards compatible: fill "size" column with values from arraysize set above
--- where arraysize is a possibly variable-length 1-dimensional value
-update tap_schema.columns11 SET "size" = replace(arraysize::varchar,'*','')::int 
-WHERE table_name LIKE 'caom2.%'
-  AND arraysize IS NOT NULL
-  AND arraysize NOT LIKE '%x%'
-  AND arraysize != '*';
