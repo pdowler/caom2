@@ -347,7 +347,8 @@ public class TorkeepIntTest extends AbstractIntTest {
     @Test
     public void testPutByteLimitExceeded() throws Exception {
         // create an observation using subject1
-        Observation observation = createVeryLargeObservation(TEST_COLLECTION, "testPutByteLimitExceeded");
+        String observationID = generateID("testPutByteLimitExceeded");
+        Observation observation = createVeryLargeObservation(TEST_COLLECTION, observationID);
         putObservation(observation, subject1, 413, null);
     }
 
