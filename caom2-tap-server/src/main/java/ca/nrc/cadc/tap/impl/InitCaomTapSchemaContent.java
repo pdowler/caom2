@@ -87,11 +87,12 @@ public class InitCaomTapSchemaContent extends InitDatabase {
     private static final Logger log = Logger.getLogger(InitCaomTapSchemaContent.class);
 
     public static final String MODEL_NAME = "caom-schema";
-    public static final String MODEL_VERSION = "1.2.19";
+    public static final String MODEL_VERSION = "1.2.21";
 
     // the SQL is tightly coupled to cadc-tap-schema table names (for TAP-1.1)
     static String[] BASE_SQL = new String[] {
         "caom2.tap_schema_content11.sql",
+        "caom2.compat-size-fix.sql",
         "ivoa.tap_schema_content11.sql"
     };
 
@@ -99,6 +100,7 @@ public class InitCaomTapSchemaContent extends InitDatabase {
     static String[] BASE_EXTRA_SQL = new String[] {
         "caom2.tap_schema_content11.sql",
         "caom2.tap_schema_content11-extra.sql",
+        "caom2.compat-size-fix.sql",
         "ivoa.tap_schema_content11.sql"
     };
     
